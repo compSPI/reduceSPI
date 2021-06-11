@@ -1,14 +1,16 @@
-class PCA():
-	"""placeholder
-	"""
-	print('not implemented yet')
+class PCA:
+    """placeholder"""
 
-class VAE():
-	""" placeholder
-	"""
-	print('not implemented yet')
+    print("not implemented yet")
 
-class VAEGAN():
-    """ placeholder
-    """
-    print('not implemented yet')
+
+class VAE:
+    """placeholder"""
+
+    print("not implemented yet")
+
+
+class VAEGAN:
+    """placeholder"""
+
+    print("not implemented yet")

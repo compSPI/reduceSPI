@@ -1,9 +1,10 @@
-class iPCA():
-	""" placeholder
-	"""
-	print('not implemented yet')
+class iPCA:
+    """placeholder"""
 
-class iVAElol():
-    """ placeholder
-    """
-    print('not implemented yet')
+    print("not implemented yet")
+
+
+class iVAElol:
+    """placeholder"""
+
+    print("not implemented yet")
