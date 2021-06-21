@@ -1,5 +1,4 @@
-"""Open datasets and processes them to be used by a neural network
-"""
+"""Open datasets and processes them to be used by a neural network"""
 
 
 import os
