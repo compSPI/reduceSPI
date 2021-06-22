@@ -20,18 +20,18 @@ else:
 KWARGS = {'num_workers': 1, 'pin_memory': True} if CUDA else {}
 
 PATHS = {}
-PATHS["simulated2d"] = "cryo_sim_128x128.npy"
+PATHS["simulated_2d"] = "cryo_sim_128x128.npy"
 PATHS["real_2d30"] = "class2D_30_sort.h5"
 PATHS["real_2d39"] = "class2D_39_sort.h5"
 PATHS["real_2d93"] = "class2D_93_sort.h5"
-PATHS["refine3D"] = "refine3D_180x180_sort.h5"
+PATHS["refine_3d"] = "refine3D_180x180_sort.h5"
 PATHS["class3D9090"] = "class3D_90x90_sort.h5"
-PATHS["simulated3d"] = "concat_simulated.npy"
-PATHS["simulated3DNoise"] = "cryo_sim_128x128.npy"
+PATHS["simulated_3d"] = "concat_simulated.npy"
+PATHS["simulated_3d_noise"] = "cryo_sim_128x128.npy"
 PATHS["real3d"] = 'data.hdf5'
 PATHS["4points"] = "4points.npy"
 PATHS["4points1"] = "4points1.npy"
-PATHS["4points3d"] = "3d_images.npy"
+PATHS["4points_3d"] = "3d_images.npy"
 
 
 def open_dataset(path, new_size, is_3d):
