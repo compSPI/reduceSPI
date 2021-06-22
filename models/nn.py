@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Apr 14 20:35:59 2021
-
-@author: NLEGENDN
-"""
+"""This file is creating Convolutional Neural Networks"""
 import numpy as np
 import functools
 import torch.nn as nn
@@ -240,7 +235,6 @@ class EncoderConv(nn.Module):
         logvar : tensor, latent space sigma.
 
         """
-
         h = x
         for i in range(self.n_blocks):
             h = self.blocks[2*i](h)
@@ -588,7 +582,7 @@ class Discriminator(nn.Module):
         -------
         tuple, shape of the output of the layer.
 
-    """
+        """
         return conv_output_size(
             in_shape, out_channels,
             kernel_size=self.dis_ks,
@@ -598,7 +592,7 @@ class Discriminator(nn.Module):
 
     def __init__(self, config):
         """
-        initialization of the GAN.
+        Initialization of the GAN.
 
         Parameters
         ----------
