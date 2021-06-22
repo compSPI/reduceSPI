@@ -618,8 +618,8 @@ class Discriminator(nn.Module):
         self.dis_pad = config["dis_pad"]
         self.dis_dil = config["dis_dil"]
         self.config = config
-        self.latent_dim = config['latent_dim']
-        self.img_shape = config['img_shape']
+        self.latent_dim = config["latent_dim"]
+        self.img_shape = config["img_shape"]
 
         # activation functions
         self.leakyrelu = nn.LeakyReLU(0.2)
