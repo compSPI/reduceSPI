@@ -45,7 +45,6 @@ def conv_parameters(conv_dim, kernel_size, stride, padding, dilation):
     kernel_size : array, kernel size for a 2d or 3d problem
     stride : array, stride for a 2d or 3d problem
     padding : array, padding for a 2d or 3d problem
-
     """
     if type(kernel_size) is int:
         kernel_size = np.repeat(kernel_size, conv_dim)
@@ -55,12 +54,15 @@ def conv_parameters(conv_dim, kernel_size, stride, padding, dilation):
         padding = np.repeat(padding, conv_dim)
     if type(dilation) is int:
         dilation = np.repeat(dilation, conv_dim)
+    if len(kernel_size) != conv_dim:
+        raise ValueError
 
-    assert len(kernel_size) == conv_dim
-    assert len(stride) == conv_dim
-    assert len(padding) == conv_dim
-    assert len(dilation) == conv_dim
-
+    if len(stride) != conv_dim:
+        raise ValueError
+    if len(padding) != conv_dim:
+        raise ValueError
+    if len(dilation) != conv_dim:
+        raise ValueError
     return kernel_size, stride, padding, dilation
 
 
@@ -82,10 +84,7 @@ def conv_transpose_input_size(out_shape, in_channels, kernel_size, stride,
     Returns
     -------
     tuple, shape of the information before passing the layer.
-
-
     """
-
     conv_dim = len(out_shape[1:])
     kernel_size, stride, padding, dilation = conv_parameters(
         conv_dim, kernel_size, stride, padding, dilation)
@@ -102,7 +101,8 @@ def conv_transpose_input_size(out_shape, in_channels, kernel_size, stride,
              // stride[i_dim])
             + 1)
 
-        assert shape_i_dim % 1 == 0, "Conv hyperparameters not valid."
+        if shape_i_dim % 1 != 0:
+            raise ValueError
         return int(shape_i_dim)
 
     in_shape = [one_dim(i_dim) for i_dim in range(conv_dim)]
@@ -127,7 +127,6 @@ def conv_output_size(in_shape, out_channels, kernel_size, stride, padding,
     Returns
     -------
     out_shape : tuple, shape of the output of the layer.
-
     """
     out_shape = conv_transpose_input_size(
         out_shape=in_shape,
@@ -144,7 +143,7 @@ def conv_output_size(in_shape, out_channels, kernel_size, stride, padding,
 class EncoderConv(nn.Module):
     def __init__(self,  config):
         """
-        initialization of the encoder.
+        Initialization of the encoder.
 
         Parameters
         ----------
@@ -208,7 +207,7 @@ class EncoderConv(nn.Module):
 
     def enc_conv_output_size(self, in_shape, out_channels):
         """
-        compute the output shape of a layer
+        Compute the output shape of a layer
 
         Parameters
         ----------
@@ -229,7 +228,7 @@ class EncoderConv(nn.Module):
 
     def forward(self, x):
         """
-        compute the passage through the neural network
+        Compute the passage through the neural network
 
         Parameters
         ----------
@@ -279,7 +278,7 @@ class DecoderConv(nn.Module):
 
     def block(self, out_shape, dec_c_factor):
         """
-        compute every layer
+        Compute every layer
 
         Parameters
         ----------
@@ -313,7 +312,7 @@ class DecoderConv(nn.Module):
 
     def end_block(self, out_shape, dec_c_factor):
         """
-        compute the last layer of the NN
+        Compute the last layer of the NN
 
         Parameters
         ----------
@@ -342,7 +341,7 @@ class DecoderConv(nn.Module):
 
     def __init__(self, config):
         """
-        initialization of the encoder.
+        Initialization of the encoder.
 
         Parameters
         ----------
@@ -384,7 +383,8 @@ class DecoderConv(nn.Module):
         self.conv_transpose_recon = conv_transpose_recon
         self.conv_transpose_scale = conv_transpose_scale
 
-        assert np.all(required_in_shape_r == required_in_shape_s)
+        if np.all(required_in_shape_r != required_in_shape_s):
+            raise ValueError
         required_in_shape = required_in_shape_r
 
         blocks_reverse = torch.nn.ModuleList()
@@ -416,7 +416,7 @@ class DecoderConv(nn.Module):
 
     def forward(self, z):
         """
-        compute the passage through the neural network
+        Compute the passage through the neural network
 
         Parameters
         ----------
@@ -449,7 +449,7 @@ class DecoderConv(nn.Module):
 class VaeConv(nn.Module):
     def __init__(self, config):
         """
-        initialization of the VAE.
+        Initialization of the VAE.
 
         Parameters
         ----------
@@ -477,7 +477,7 @@ class VaeConv(nn.Module):
 
     def forward(self, x):
         """
-        compute the passage through the neural network
+        Compute the passage through the neural network
 
         Parameters
         ----------
@@ -499,7 +499,7 @@ class VaeConv(nn.Module):
 
 def reparametrize(mu, logvar, n_samples=1):
     """
-    transform the probabilistic latent space into a deterministic latent space
+    Transform the probabilistic latent space into a deterministic latent space
 
     Parameters
     ----------
@@ -536,7 +536,7 @@ def reparametrize(mu, logvar, n_samples=1):
 
 def sample_from_q(mu, logvar, n_samples=1):
     """
-    transform a probabilistic latent space into a deterministic latent space
+    Transform a probabilistic latent space into a deterministic latent space
 
     Parameters
     ----------
@@ -554,7 +554,7 @@ def sample_from_q(mu, logvar, n_samples=1):
 
 def sample_from_prior(latent_dim, n_samples=1):
     """
-    transform a probabilistic latent space into a deterministic latent space
+    Transform a probabilistic latent space into a deterministic latent space
 
     Parameters
     ----------
@@ -577,6 +577,18 @@ def sample_from_prior(latent_dim, n_samples=1):
 
 class Discriminator(nn.Module):
     def dis_conv_output_size(self, in_shape, out_channels):
+        """
+        Compute the output shape by knowing the input shape of a layer
+
+        Parameters
+        ----------
+        in_shape : tuple, shape of the input of the layer.
+        out_channels : int, number of output channels.
+        Returns
+        -------
+        tuple, shape of the output of the layer.
+
+    """
         return conv_output_size(
             in_shape, out_channels,
             kernel_size=self.dis_ks,
@@ -666,8 +678,6 @@ class Discriminator(nn.Module):
         self.fc1 = nn.Linear(
             in_features=self.fcs_infeatures,
             out_features=1)
-
-        # TODO(nina): Add FC layers here to improve Discriminator
 
     def forward(self, x):
         """
