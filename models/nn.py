@@ -136,6 +136,8 @@ def conv_output_size(in_shape, out_channels, kernel_size, stride, padding,
 
 
 class EncoderConv(nn.Module):
+    """This class compute the Encoder"""
+
     def __init__(self,  config):
         """
         Initialization of the encoder.
@@ -248,6 +250,8 @@ class EncoderConv(nn.Module):
 
 
 class DecoderConv(nn.Module):
+    """This class compute the decoder"""
+
     def dec_conv_transpose_input_size(self, out_shape, in_channels):
         """
         Compute the in_shape of a layer by knowing the output shape.
@@ -441,6 +445,8 @@ class DecoderConv(nn.Module):
 
 
 class VaeConv(nn.Module):
+    """This class compute the VAE"""
+
     def __init__(self, config):
         """
         Initialization of the VAE.
@@ -570,6 +576,8 @@ def sample_from_prior(latent_dim, n_samples=1):
 
 
 class Discriminator(nn.Module):
+    """This class compute the GAN"""
+
     def dis_conv_output_size(self, in_shape, out_channels):
         """
         Compute the output shape by knowing the input shape of a layer
