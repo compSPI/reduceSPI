@@ -1,4 +1,4 @@
-"""Open datasets and processes them to be used by a neural network"""
+"""Open datasets and processes them to be used by a neural network."""
 
 
 import json
@@ -124,8 +124,7 @@ def hinted_tuple_hook(obj):
     """
     if '__tuple__' in obj:
         return tuple(obj['items'])
-    else:
-        return obj
+    return obj
 
 
 def load_parameters(path):
