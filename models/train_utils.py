@@ -164,14 +164,13 @@ def init_modules_and_optimizers(train_params, config):
     return modules, optimizers
 
 
-def init_training(train_dir, nn_architecture, train_params, config):
+def init_training(train_dir, train_params, config):
     """
     Initialization; Load ckpts or init.
 
     Parameters
     ----------
     train_dir : string, dir where to save the modules.
-    nn_architecture : dic, meta parameters for the NN.
     train_params : dic, meta parameters for the NN.
     config : dic, meta parameters for the NN.
 
@@ -188,19 +187,16 @@ def init_training(train_dir, nn_architecture, train_params, config):
     val_losses_all_epochs = []
 
     modules, optimizers = init_modules_and_optimizers(
-        nn_architecture, train_params, config)
+        train_params, config)
 
     path_base = os.path.join(train_dir, 'epoch_*_checkpoint.pth')
     ckpts = glob.glob(path_base)
     if len(ckpts) == 0:
         weights_init = train_params['weights_init']
         logging.info(
-            "No checkpoints found. Initializing with %s." % weights_init)
+            "No checkpoints found. Initializing with %s.", weights_init)
 
         for module_name, module in modules.items():
-            if nn_architecture['nn_type'] == 'toy':
-                if module_name == 'decoder':
-                    continue
             module.apply(init_function(weights_init))
 
     else:
@@ -208,7 +204,7 @@ def init_training(train_dir, nn_architecture, train_params, config):
             (int(f.split('_')[-2]), f) for f in ckpts]
         _, ckpt_path = max(
             ckpts_ids_and_paths, key=lambda item: item[0])
-        logging.info("Found checkpoints. Initializing with %s." % ckpt_path)
+        logging.info("Found checkpoints. Initializing with %s.", ckpt_path)
         if torch.cuda.is_available():
             def map_location(storage): return storage.cuda()
         else:
@@ -294,10 +290,9 @@ def load_checkpoint(output, epoch_id=None):
             '%s/checkpoint_*/epoch_*_checkpoint.pth' % output)
         if len(ckpts) == 0:
             raise ValueError('No checkpoints found.')
-        else:
-            ckpts_ids_and_paths = [(int(f.split('_')[-2]), f) for f in ckpts]
-            _, ckpt_path = max(
-                ckpts_ids_and_paths, key=lambda item: item[0])
+        ckpts_ids_and_paths = [(int(f.split('_')[-2]), f) for f in ckpts]
+        _, ckpt_path = max(
+            ckpts_ids_and_paths, key=lambda item: item[0])
     else:
         # Load module corresponding to epoch_id
         ckpt_path = f"{output}/checkpoint_{epoch_id:0>6d}/" + \
