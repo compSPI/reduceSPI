@@ -12,11 +12,6 @@ from PIL import Image
 
 CUDA = torch.cuda.is_available()
 
-if CUDA:
-    CRYO_TRAIN_VAL_DIR = os.getcwd() + "/Cryo/VAE_Cryo_V3/Data/"
-else:
-    CRYO_TRAIN_VAL_DIR = os.getcwd() + "\\Data\\"
-
 
 KWARGS = {'num_workers': 1, 'pin_memory': True} if CUDA else {}
 
@@ -66,7 +61,7 @@ def open_dataset(path, new_size, is_3d):
 
 def normalization_linear(dataset):
     """
-    Normalize a tensor
+    Normalize a tensor.
     Parameters
     ----------
     dataset : tensor, images.
@@ -111,7 +106,6 @@ def organize_dataset(dataset, batch_size, frac_val):
 def hinted_tuple_hook(obj):
     """
     Transform a list into tuple.
-
     Parameters
     ----------
     obj : *, value of a dic.
