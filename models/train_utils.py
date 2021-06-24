@@ -102,22 +102,20 @@ def init_function(weights_init='xavier'):
     """
     if weights_init == 'xavier':
         return init_xavier_normal
-    elif weights_init == 'kaiming':
+    if weights_init == 'kaiming':
         return init_kaiming_normal
-    elif weights_init == 'custom':
+    if weights_init == 'custom':
         return init_custom
-    else:
-        raise NotImplementedError(
-            'This weight initialization is not implemented.')
+    raise NotImplementedError(
+        "This weight initialization is not implemented.")
 
 
-def init_modules_and_optimizers(nn_architecture, train_params, config):
+def init_modules_and_optimizers(train_params, config):
     """
     Initialization of the different modules and optimizer of the NN.
 
     Parameters
     ----------
-    nn_architecture : dic, meta parameters for the NN.
     train_params : dic, meta parameters for the NN.
     config : dic, meta parameters for the NN.
 
@@ -197,7 +195,7 @@ def init_training(train_dir, nn_architecture, train_params, config):
     if len(ckpts) == 0:
         weights_init = train_params['weights_init']
         logging.info(
-            'No checkpoints found. Initializing with %s.' % weights_init)
+            "No checkpoints found. Initializing with %s." % weights_init)
 
         for module_name, module in modules.items():
             if nn_architecture['nn_type'] == 'toy':
@@ -208,16 +206,16 @@ def init_training(train_dir, nn_architecture, train_params, config):
     else:
         ckpts_ids_and_paths = [
             (int(f.split('_')[-2]), f) for f in ckpts]
-        ckpt_id, ckpt_path = max(
+        _, ckpt_path = max(
             ckpts_ids_and_paths, key=lambda item: item[0])
-        logging.info('Found checkpoints. Initializing with %s.' % ckpt_path)
+        logging.info("Found checkpoints. Initializing with %s." % ckpt_path)
         if torch.cuda.is_available():
-            def map_location(storage, loc): return storage.cuda()
+            def map_location(storage): return storage.cuda()
         else:
             map_location = 'cpu'
         ckpt = torch.load(ckpt_path, map_location=map_location)
         # ckpt = torch.load(ckpt_path, map_location=DEVICE)
-        for module_name in modules.keys():
+        for module_name in modules:
             module = modules[module_name]
             optimizer = optimizers[module_name]
             module_ckpt = ckpt[module_name]
@@ -298,7 +296,7 @@ def load_checkpoint(output, epoch_id=None):
             raise ValueError('No checkpoints found.')
         else:
             ckpts_ids_and_paths = [(int(f.split('_')[-2]), f) for f in ckpts]
-            ckpt_id, ckpt_path = max(
+            _, ckpt_path = max(
                 ckpts_ids_and_paths, key=lambda item: item[0])
     else:
         # Load module corresponding to epoch_id
