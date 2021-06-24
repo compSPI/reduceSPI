@@ -70,5 +70,8 @@
 			"lambda_regu": 0.2,
 			"lambda_adv": 0.2,
 			"reconstructions": {"items":["bce_on_intensities", "adversarial"],"__tuple__":true}
-		}
+		},
+
+	"meta_param_names":["enc_ks","enc_str", "enc_pad", "enc_dil", "enc_c", "dec_ks", "dec_str","dec_pad", "dec_dil", "dec_c", "dis_ks", "dis_str", "dis_pad","dis_dil", "dis_c"]
+
 }

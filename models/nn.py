@@ -1,4 +1,4 @@
-"""This file is creating Convolutional Neural Networks"""
+"""This file is creating Convolutional Neural Networks."""
 import numpy as np
 import functools
 import torch.nn as nn

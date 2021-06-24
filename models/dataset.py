@@ -137,7 +137,11 @@ def load_parameters(path):
 
     Returns
     -------
-    parameters : dic, the file which has been open.
+    paths : dic, path to the data.
+    shapes: dic, shape of every dataset.
+    constants: dic, meta information for the vae.
+    search_space: dic, meta information for the vae.
+    meta_param_names: dic, names of meta parameters.
 
     """
     with open(path) as json_file:
@@ -146,12 +150,14 @@ def load_parameters(path):
         shapes = parameters["shape"]
         constants = parameters["constants"]
         search_space = parameters["search_space"]
-        return paths, shapes, constants, search_space
+        meta_param_names = parameters["meta_param_names"]
+        constants["conv_dim"] = len(constants["img_shape"][1:])
+        constants["dataset_name"] = paths["simulated_2d"]
+        constants["dim_data"] = functools.reduce(
+            (lambda x, y: x * y), constants["img_shape"])
+        return paths, shapes, constants, search_space, meta_param_names
 
 
-PATHS, SHAPES, CONSTANTS, SEARCH_SPACE = load_parameters("vae_parameters.json")
-
-CONSTANTS["conv_dim"] = len(CONSTANTS["img_shape"][1:])
-CONSTANTS["dataset_name"] = PATHS["simulated_2d"]
-CONSTANTS["dim_data"] = functools.reduce(
-    (lambda x, y: x * y), CONSTANTS["img_shape"])
+if __name__ == "__main__":
+    PATHS, SHAPES, CONSTANTS, SEARCH_SPACE, META_PARAM_NAMES = load_parameters(
+        "vae_parameters.json")
