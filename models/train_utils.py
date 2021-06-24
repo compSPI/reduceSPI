@@ -36,9 +36,9 @@ def init_xavier_normal(m):
     None.
 
     """
-    if type(m) == tnn.Linear:
+    if type(m) is tnn.Linear:
         tnn.init.xavier_normal_(m.weight)
-    if type(m) == tnn.Conv2d:
+    if type(m) is tnn.Conv2d:
         tnn.init.xavier_normal_(m.weight)
 
 
@@ -55,9 +55,9 @@ def init_kaiming_normal(m):
     None.
 
     """
-    if type(m) == tnn.Linear:
+    if type(m) is tnn.Linear:
         tnn.init.kaiming_normal_(m.weight)
-    if type(m) == tnn.Conv2d:
+    if type(m) is tnn.Conv2d:
         tnn.init.kaiming_normal_(m.weight)
 
 
