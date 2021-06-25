@@ -1,4 +1,4 @@
-"""Open datasets and processes them to be used by a neural network."""
+"""Open datasets and process them to be used by a neural network."""
 
 
 import json
@@ -17,13 +17,14 @@ KWARGS = {'num_workers': 1, 'pin_memory': True} if CUDA else {}
 
 
 def open_dataset(path, new_size, is_3d):
-    """
-    Open datasets and processes data in ordor to make tensors.
+    """Open datasets and processes data in ordor to make tensors.
+
     Parameters
     ----------
     path : string path.
     new_size : int.
-    is_3d : boolean if 2d or 3d
+    is_3d : boolean if 2d or 3d.
+
     Returns
     -------
     tensor, images in black and white.
@@ -42,6 +43,7 @@ def open_dataset(path, new_size, is_3d):
     if is_3d:
         dataset = torch.Tensor(dataset)
         dataset = normalization_linear(dataset)
+        dataset = dataset.reshape((len(dataset), 1)+dataset.shape[1:])
     else:
         if img_shape.ndim == 3:
             for i in range(n_imgs):
@@ -60,11 +62,12 @@ def open_dataset(path, new_size, is_3d):
 
 
 def normalization_linear(dataset):
-    """
-    Normalize a tensor.
+    """Normalize a tensor.
+
     Parameters
     ----------
     dataset : tensor, images.
+
     Returns
     -------
     dataset : tensor, normalized images.
@@ -78,14 +81,15 @@ def normalization_linear(dataset):
     return dataset
 
 
-def organize_dataset(dataset, batch_size, frac_val):
-    """
-    Separate data in train and validation sets.
+def split_dataset(dataset, batch_size, frac_val):
+    """Separate data in train and validation sets.
+
     Parameters
     ----------
     dataset : tensor, images.
     batch_size : int, batch_size.
     frac_val : float, ratio between validation and training datasets.
+
     Returns
     -------
     trainset : tensor of training images.
@@ -104,8 +108,8 @@ def organize_dataset(dataset, batch_size, frac_val):
 
 
 def hinted_tuple_hook(obj):
-    """
-    Transform a list into tuple.
+    """Transform a list into tuple.
+
     Parameters
     ----------
     obj : *, value of a dic.
@@ -114,7 +118,6 @@ def hinted_tuple_hook(obj):
     -------
     tuple, transform the value of a dic into dic.
     obj: *,value of a dic.
-
     """
     if '__tuple__' in obj:
         return tuple(obj['items'])
@@ -122,8 +125,7 @@ def hinted_tuple_hook(obj):
 
 
 def load_parameters(path):
-    """
-    Load metadata for the VAE.
+    """Load metadata for the VAE.
 
     Parameters
     ----------
@@ -136,7 +138,6 @@ def load_parameters(path):
     constants: dic, meta information for the vae.
     search_space: dic, meta information for the vae.
     meta_param_names: dic, names of meta parameters.
-
     """
     with open(path) as json_file:
         parameters = json.load(json_file, object_hook=hinted_tuple_hook)
