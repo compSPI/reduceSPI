@@ -1,3 +1,0 @@
-"""Test
-
-normalization_linear
