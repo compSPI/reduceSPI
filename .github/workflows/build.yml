@@ -45,7 +45,7 @@ jobs:
           $CONDA/bin/conda env update --file environment.yml --name reduceSPI
       - name: linting [flake8-black]
         run: |
-          $CONDA/bin/flake8-black reduceSPI tests
+          $CONDA/bin/flake8 reduceSPI tests
       - name: unit testing [pytest]
         run: |
           $CONDA/bin/pytest
