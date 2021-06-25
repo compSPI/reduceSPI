@@ -5,3 +5,4 @@ channels:
 dependencies:
   - flake8-black
   - numpy
+  - pytest
