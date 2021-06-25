@@ -21,13 +21,16 @@ def open_dataset(path, new_size, is_3d):
 
     Parameters
     ----------
-    path : string path.
+    path : string,
+        Path.
     new_size : int.
-    is_3d : boolean if 2d or 3d.
+    is_3d : boolean
+        If 2d or 3d.
 
     Returns
     -------
-    tensor, images in black and white.
+    tensor
+        Images in black and white.
     """
     if not os.path.exists(path):
         raise OSError
@@ -66,11 +69,13 @@ def normalization_linear(dataset):
 
     Parameters
     ----------
-    dataset : tensor, images.
+    dataset : tensor,
+        Images.
 
     Returns
     -------
-    dataset : tensor, normalized images.
+    dataset : tensor,
+        Normalized images.
     """
     for i, data in enumerate(dataset):
         min_data = torch.min(data)
@@ -86,16 +91,23 @@ def split_dataset(dataset, batch_size, frac_val):
 
     Parameters
     ----------
-    dataset : tensor, images.
-    batch_size : int, batch_size.
-    frac_val : float, ratio between validation and training datasets.
+    dataset : tensor,
+        Images.
+    batch_size : int,
+        Batch_size.
+    frac_val : float,
+        Ratio between validation and training datasets.
 
     Returns
     -------
-    trainset : tensor of training images.
-    testset : tensor of test images.
-    trainloader : tensor ready to be used by the NN for training images.
-    testloader : tensor ready to be used by the NN for test images.
+    trainset : tensor
+        Training images.
+    testset : tensor
+        Test images.
+    trainloader : tensor
+        Ready to be used by the NN for training images.
+    testloader : tensor
+        Ready to be used by the NN for test images.
     """
     n_imgs = len(dataset)
     n_val = int(n_imgs*frac_val)
@@ -112,12 +124,15 @@ def hinted_tuple_hook(obj):
 
     Parameters
     ----------
-    obj : *, value of a dic.
+    obj : *,
+        Value of a dic.
 
     Returns
     -------
-    tuple, transform the value of a dic into dic.
-    obj: *,value of a dic.
+    tuple,
+        Transform the value of a dic into dic.
+    obj: *,
+        Value of a dic.
     """
     if '__tuple__' in obj:
         return tuple(obj['items'])
@@ -129,15 +144,21 @@ def load_parameters(path):
 
     Parameters
     ----------
-    path : string, path to the file.
+    path : string,
+        Path to the file.
 
     Returns
     -------
-    paths : dic, path to the data.
-    shapes: dic, shape of every dataset.
-    constants: dic, meta information for the vae.
-    search_space: dic, meta information for the vae.
-    meta_param_names: dic, names of meta parameters.
+    paths : dic,
+        Path to the data.
+    shapes: dic,
+        Shape of every dataset.
+    constants: dic,
+        Meta information for the vae.
+    search_space: dic,
+        Meta information for the vae.
+    meta_param_names: dic,
+        Names of meta parameters.
     """
     with open(path) as json_file:
         parameters = json.load(json_file, object_hook=hinted_tuple_hook)
