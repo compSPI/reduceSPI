@@ -43,9 +43,9 @@ jobs:
         run:  |
           # $CONDA is an environment variable pointing to the root of the miniconda directory
           $CONDA/bin/conda env update --file environment.yml --name reduceSPI
-      - name: linting [flake8-black]
+      - name: linting [black]
         run: |
-          $CONDA/bin/flake8 reduceSPI tests
+          $CONDA/bin/black --check reduceSPI tests
       - name: unit testing [pytest]
         run: |
           $CONDA/bin/pytest

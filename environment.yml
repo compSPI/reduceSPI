@@ -3,6 +3,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - flake8-black
+  - black
   - numpy
   - pytest
