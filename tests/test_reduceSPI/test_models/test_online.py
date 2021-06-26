@@ -2,8 +2,9 @@
 
 
 class TestOnline:
+    """Test functions from the online.py module."""
+
     @staticmethod
     def test_placeholder():
         """Test placeholder."""
-        result = True
-        assert result
+        pass
