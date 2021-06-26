@@ -7,4 +7,4 @@ class TestOnline:
     @staticmethod
     def test_placeholder():
         """Test placeholder."""
-        pass
+        print("Test placeholder.")
