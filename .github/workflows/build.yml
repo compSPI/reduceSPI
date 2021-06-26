@@ -49,4 +49,4 @@ jobs:
           $CONDA/bin/flake8 reduceSPI tests
       - name: unit testing [pytest]
         run: |
-          $CONDA/bin/pytest --cov=./coverage/reports/ --cov-report=xml
+          $CONDA/bin/pytest
