@@ -2,5 +2,8 @@
 
 
 class TestOnline:
-    def test_placeholder(self):
-        assert True
+    @staticmethod
+    def test_placeholder():
+        """Test placeholder."""
+        result = True
+        assert result
