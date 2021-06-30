@@ -8,3 +8,4 @@ dependencies:
   - pip
   - pytest 
   - pytest-cov 
+  - pytorch
