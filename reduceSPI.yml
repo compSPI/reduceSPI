@@ -5,4 +5,7 @@ channels:
 dependencies:
   - flake8-black
   - numpy
-  - pytest
+  - pip
+  - pytest 
+  - pytest-cov 
+  - pytorch
