@@ -54,5 +54,7 @@ jobs:
         run: |
           $CONDA/bin/pytest --cov=./ --cov-report term --cov=reduceSPI ${{matrix.test-folder}}
       - name: uploading code coverage [codecov]
+        with:
+          fetch-depth: 2
         run: |
           bash <(curl -s https://codecov.io/bash) -c
