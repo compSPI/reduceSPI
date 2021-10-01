@@ -49,7 +49,7 @@ jobs:
           $CONDA/bin/flake8 reduceSPI tests
       - name: unit testing [pytest]
         run: |
-          $CONDA/bin/pytest --cov-report term --cov=reduceSPI ${{matrix.test-folder}}
+          $CONDA/bin/pytest --cov=./ --cov-report term --cov=reduceSPI ${{matrix.test-folder}}
       - name: uploading code coverage [codecov]
         run: |
           bash <(curl -s https://codecov.io/bash) -c
