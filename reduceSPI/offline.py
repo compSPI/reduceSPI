@@ -2,7 +2,7 @@
 
 
 class PCA:
-    """placeholder"""
+    """Placeholder"""
 
     print("not implemented yet")
 
