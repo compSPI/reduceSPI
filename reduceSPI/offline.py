@@ -2,5 +2,5 @@
 
 
 def placeholder():
-    """Return 3."""
-    return 3
+    """Return 4."""
+    return 4

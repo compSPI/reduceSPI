@@ -10,5 +10,5 @@ class TestOffline:
     def test_placeholder():
         """Test placeholder."""
         result = placeholder()
-        expected = 3
+        expected = 4
         assert result == expected
