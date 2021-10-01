@@ -2,18 +2,18 @@
 
 
 class PCA:
-    """Placeholder"""
+    """Placeholder."""
 
     print("not implemented yet")
 
 
 class VAE:
-    """placeholder"""
+    """Placeholder."""
 
     print("not implemented yet")
 
 
 class VAEGAN:
-    """placeholder"""
+    """Placeholder."""
 
     print("not implemented yet")

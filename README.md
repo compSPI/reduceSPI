@@ -22,6 +22,8 @@ follows our Python style guidelines. To do so, just run the following command li
 
     pre-commit install
 
-With this hook, your code will be automatically formatted with our style conventions. If the pre-commit hook marks "Failed" upon commit, this means that your code was not correctly formatted, but has been re-formatted by the hook. Re-commit the result and check that the pre-commit marks "Passed".
+With this hook, your code will be automatically formatted with our style conventions. If the pre-commit hooks black and isort mark "Failed" upon commit, this means that your code was not correctly formatted, but has been re-formatted by the hooks. Re-commit the result and check that the pre-commit marks "Passed".
+
+Note that the hooks do not reformat docstrings automatically. If hooks failed with an error related to the documentation, you should correct this error yourself, commit the result and check that the pre-commit marks "Passed".
 
 See our [contributing](https://github.com/compspi/compspi/blob/master/docs/contributing.rst) guidelines!
