@@ -4,7 +4,6 @@ channels:
   - defaults
 dependencies:
   - codecov
-  - coverage
   - flake8-black
   - flake8-docstrings
   - flake8-import-order
@@ -15,4 +14,5 @@ dependencies:
   - pytorch>=1.8.1
   - pip:
     - black==20.8b0
+    - coverage
     - pre-commit
