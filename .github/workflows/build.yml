@@ -6,12 +6,15 @@ on:
     paths-ignore:
     - 'README.md'
     - '.deepsource.toml'
+    - '.gitignore'
+
 
   pull_request:
     branches: [master]
     paths-ignore:
     - 'README.md'
     - '.deepsource.toml'
+    - '.gitignore'
 
 
 jobs:
