@@ -7,4 +7,4 @@ class TestOffline:
     @staticmethod
     def test_placeholder():
         """Test placeholder."""
-        print("Test placeholder.")
+        print("Test placeholder test.")
