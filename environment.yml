@@ -4,7 +4,10 @@ channels:
   - defaults
 dependencies:
   - codecov
+  - coverage
   - flake8-black
+  - flake8-docstrings
+  - flake8-import-order
   - numpy>=1.18.1
   - pip
   - pytest
