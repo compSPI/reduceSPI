@@ -2,6 +2,7 @@
 [![DeepSource](https://deepsource.io/gh/compSPI/reduceSPI.svg/?label=active+issues&show_trend=true&token=jLUY_liiut7OfeyiBI2ECnc9)](https://deepsource.io/gh/compSPI/reduceSPI/?ref=repository-badge)
 
 # About
+
 This is the Python package: `reduceSPI`: Data Reduction Models for SPI
 
 # Download
@@ -14,7 +15,7 @@ Then download:
    
     git clone https://github.com/compSPI/reduceSPI.git
 
-## Contribute
+# Contribute
 
 We strongly recommend installing our pre-commit hook, to ensure that your code
 follows our Python style guidelines. To do so, just run the following command line at the root of this repository:
