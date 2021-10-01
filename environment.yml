@@ -4,8 +4,10 @@ channels:
   - defaults
 dependencies:
   - flake8-black
-  - numpy
+  - numpy>=1.18.1
   - pip
   - pytest
   - pytest-cov
-  - pytorch
+  - torch>=1.8.1
+  - pip:
+    - pre-commit
