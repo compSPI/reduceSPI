@@ -20,3 +20,9 @@ ipython_config.py
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Unit test / coverage reports
+htmlcov/
+coverage.xml
+.coverage
+.coverage.*

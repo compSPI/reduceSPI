@@ -7,6 +7,7 @@ on:
     - 'README.md'
     - '.deepsource.toml'
     - '.gitignore'
+    - 'setup.py'
 
 
   pull_request:
@@ -15,6 +16,7 @@ on:
     - 'README.md'
     - '.deepsource.toml'
     - '.gitignore'
+    - 'setup.py'
 
 
 jobs:
@@ -30,6 +32,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Build using Python ${{matrix.python-version}}
         uses: actions/setup-python@v2
         with:
@@ -52,7 +56,8 @@ jobs:
           $CONDA/bin/flake8 reduceSPI tests
       - name: unit testing [pytest]
         run: |
-          $CONDA/bin/pytest --cov-report term --cov=reduceSPI ${{matrix.test-folder}}
+          $CONDA/bin/pytest --cov-report term --cov-report xml:coverage.xml --cov=reduceSPI ${{matrix.test-folder}}
       - name: uploading code coverage [codecov]
+        if: ${{matrix.python-version == 3.7}}
         run: |
           bash <(curl -s https://codecov.io/bash) -c
