@@ -1,8 +1,8 @@
-"""Test online models."""
+"""Test offline models."""
 
 
-class TestOnline:
-    """Test functions from the online.py module."""
+class TestOffline:
+    """Test functions from the offline.py module."""
 
     @staticmethod
     def test_placeholder():

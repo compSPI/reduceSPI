@@ -22,7 +22,7 @@ jobs:
       matrix:
         os: [ubuntu-18.04]
         python-version: [3.7,3.8,3.9]
-        test-folder : ['tests.test_reduceSPI']
+        test-folder : ['tests']
       fail-fast: false
 
     steps:
@@ -36,17 +36,20 @@ jobs:
         uses: actions/cache@v1
         with:
           path: $CONDA
-          key: ${{ runner.os }}-conda-${{ hashFiles('reduceSPI.yml') }}
+          key: ${{ runner.os }}-conda-${{ hashFiles('environment.yml') }}
           restore-keys: |
             ${{ runner.os }}-conda-
       - name: install dependencies
         run:  |
           # $CONDA is an environment variable pointing to the root of the miniconda directory
-          $CONDA/bin/conda env update --file reduceSPI.yml --name base
+          $CONDA/bin/conda env update --file environment.yml --name base
           $CONDA/bin/pip install -e .
       - name: linting [flake8]
         run: |
           $CONDA/bin/flake8 reduceSPI tests
       - name: unit testing [pytest]
         run: |
-          $CONDA/bin/pytest
+          $CONDA/bin/pytest --cov-report term --cov=reduceSPI ${{matrix.test-folder}}
+      - name: uploading code coverage [codecov]
+        run: |
+          bash <(curl -s https://codecov.io/bash) -c

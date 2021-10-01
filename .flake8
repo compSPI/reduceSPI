@@ -1,0 +1,5 @@
+[flake8]
+docstring-convention = numpy
+import_order_style = smarkets
+max-line-length = 88
+extend-ignore = E203

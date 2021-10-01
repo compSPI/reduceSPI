@@ -12,10 +12,3 @@ enabled = true
 name = "python"
 enabled = true
 
-[[transformers]]
-name = "isort"
-enabled = true
-
-[[transformers]]
-name = "black"
-enabled = true
