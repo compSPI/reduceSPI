@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - codecov
   - flake8-black
   - numpy>=1.18.1
   - pip
