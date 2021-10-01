@@ -1,4 +1,5 @@
 [![Build](https://github.com/compSPI/reduceSPI/actions/workflows/build.yml/badge.svg)](https://github.com/compSPI/reduceSPI/actions/workflows/build.yml)
+[![Codecov](https://codecov.io/gh/compSPI/reduceSPI/branch/master/graph/badge.svg?token=OBVOV3ZM1O)](https://codecov.io/gh/compSPI/reduceSPI)
 [![DeepSource](https://deepsource.io/gh/compSPI/reduceSPI.svg/?label=active+issues&show_trend=true&token=jLUY_liiut7OfeyiBI2ECnc9)](https://deepsource.io/gh/compSPI/reduceSPI/?ref=repository-badge)
 
 # About
