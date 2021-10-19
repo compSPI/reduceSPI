@@ -1,10 +1,43 @@
 """This file is creating Convolutional Neural Networks."""
-import numpy as np
+
+import math
+from geomstats.geometry.special_orthogonal import SpecialOrthogonal
 import functools
-import torch.nn as nn
+from functools import reduce
+import operator
+import numpy as np
+import os
 import torch
+import torch.nn as nn
+import cryo_dataset as ds
+from pinchon_hoggan_dense import rot_mat, Jd
+os.environ["GEOMSTATS_BACKEND"] = "pytorch"
 
 CUDA = torch.cuda.is_available()
+
+
+def test():
+    if CUDA:
+        path_vae = "Cryo/VAE_Cryo_V3/vae_parameters.json"
+    else:
+        path_vae = "vae_parameters.json"
+    PATHS, SHAPES, CONSTANTS, SEARCH_SPACE, _ = ds.load_parameters(
+        path_vae)
+    CONSTANTS.update(SEARCH_SPACE)
+    CONSTANTS["latent_space_definition"] = 0
+    CONSTANTS["latent_dim"] = 10
+    CONSTANTS["skip_z"] = True
+    CONSTANTS["n_gan_lay"] = 1
+    enc = EncoderConv(CONSTANTS)
+    A = torch.zeros(20, 1, 64, 64)
+    B = enc.forward(A)
+    dec = DecoderConv(CONSTANTS)
+    C = dec.forward(B[2])
+    dis = Discriminator(CONSTANTS)
+    D = dis(A)
+    return D
+
+
 DEVICE = torch.device('cuda' if CUDA else 'cpu')
 
 NN_CONV = {
@@ -18,6 +51,12 @@ NN_BATCH_NORM = {
     2: nn.BatchNorm2d,
     3: nn.BatchNorm3d}
 
+LATENT_SPACE_DEFINITION = {
+    0: "(R^L)",
+    1: "(SO(3)xT)",
+    2: "(SO(3)xT)z0->R^L",
+    3: "Wig((SO(3)xT))z0->R^L",
+    4: "Wig((S2xS2xT))z0->R^L"}
 
 OUT_PAD = 0
 
@@ -131,7 +170,7 @@ def conv_output_size(in_shape, out_channels, kernel_size, stride, padding,
         padding=padding,
         output_padding=0,
         dilation=dilation)
-    out_shape = (out_shape[0], out_shape[1], out_shape[2])
+    # out_shape = (out_shape[0], out_shape[1], out_shape[2])
     return out_shape
 
 
@@ -153,7 +192,7 @@ class EncoderConv(nn.Module):
         """
         super(EncoderConv, self).__init__()
         self.config = config
-        self.latent_dim = config["latent_dim"]
+        self.latent_dim = int(config["latent_dim"]/2)
         self.img_shape = config["img_shape"]
         self.conv_dim = config["conv_dim"]
         self.n_blocks = config["n_enc_lay"]
@@ -163,6 +202,12 @@ class EncoderConv(nn.Module):
         self.enc_pad = config["enc_pad"]
         self.enc_dil = config["enc_dil"]
         self.nn_conv = NN_CONV[self.conv_dim]
+        self.nn_batch_norm = NN_BATCH_NORM[self.conv_dim]
+        self.latent_space_definition = config["latent_space_definition"]
+        self.z0 = torch.zeros(self.latent_dim).to(DEVICE)
+        self.z0[0] = 1
+        self.z1 = torch.zeros(self.latent_dim).to(DEVICE)
+        self.z1[1] = 1
 
         # activation functions
         self.leakyrelu = nn.LeakyReLU(0.2)
@@ -182,7 +227,7 @@ class EncoderConv(nn.Module):
                 kernel_size=self.enc_ks,
                 stride=self.enc_str,
                 padding=self.enc_pad)
-            bn = nn.BatchNorm2d(enc.out_channels)
+            bn = self.nn_batch_norm(enc.out_channels)
 
             self.blocks.append(enc)
             self.blocks.append(bn)
@@ -196,11 +241,26 @@ class EncoderConv(nn.Module):
 
         self.fcs_infeatures = functools.reduce(
             (lambda x, y: x * y), self.last_out_shape)
-        self.fc1 = nn.Linear(
-            in_features=self.fcs_infeatures, out_features=self.latent_dim)
 
-        self.fc2 = nn.Linear(
-            in_features=self.fcs_infeatures, out_features=self.latent_dim)
+        self.fc_mu, self.fc_logvar = self.init_layer_latent_space()
+
+    def init_layer_latent_space(self):
+        if self.latent_space_definition == 0:
+            mu = nn.Linear(
+                in_features=self.fcs_infeatures, out_features=self.latent_dim*2)
+            logvar = nn.Linear(
+                in_features=self.fcs_infeatures, out_features=self.latent_dim*2)
+        elif self.latent_space_definition in [1, 2, 3]:
+            mu = nn.Linear(
+                in_features=self.fcs_infeatures, out_features=5)
+            logvar = nn.Linear(
+                in_features=self.fcs_infeatures, out_features=5)
+        elif self.latent_space_definition == 4:
+            mu = nn.Linear(
+                in_features=self.fcs_infeatures, out_features=8)
+            logvar = nn.Linear(
+                in_features=self.fcs_infeatures, out_features=5)
+        return mu, logvar
 
     def enc_conv_output_size(self, in_shape, out_channels):
         """
@@ -223,13 +283,13 @@ class EncoderConv(nn.Module):
             padding=self.enc_pad,
             dilation=self.enc_dil)
 
-    def forward(self, x):
+    def forward(self, h):
         """
         Compute the passage through the neural network
 
         Parameters
         ----------
-        x : tensor, image or voxel.
+        h : tensor, image or voxel.
 
         Returns
         -------
@@ -237,16 +297,163 @@ class EncoderConv(nn.Module):
         logvar : tensor, latent space sigma.
 
         """
-        h = x
         for i in range(self.n_blocks):
             h = self.blocks[2*i](h)
             h = self.blocks[2*i+1](h)
             h = self.leakyrelu(h)
         h = h.view(-1, self.fcs_infeatures)
-        mu = self.fc1(h)
-        logvar = self.fc2(h)
+        mu = self.fc_mu(h)
+        logvar = self.fc_logvar(h)
+        if self.latent_space_definition == 0:
+            z = reparametrize(mu, logvar)
+            return mu, logvar, z, torch.zeros(mu.shape)
+        elif self.latent_space_definition in [1, 2, 3]:
+            rot_mats_no_var, translation, logvar_rotmat = reparametrize_so3(
+                mu, logvar)
+        else:
+            rot_mats_no_var, translation, logvar_rotmat = reparametrize_s2s2(
+                mu, logvar)
+        rot_mats = add_logvar(rot_mats_no_var, logvar_rotmat)
+        if self.latent_space_definition == 1:
+            vec_rot = rot_mats.reshape(-1, 9)
+            z = torch.cat((vec_rot, translation), dim=1)
+            return mu, logvar, z, rot_mats
+        wig_matrix = convert_rot_mat_ten_to_wig_mat_ten(
+            rot_mats, self.latent_dim)
+        z0 = torch.matmul(wig_matrix, self.z0)
+        z1 = torch.matmul(wig_matrix, self.z1)
+        z = torch.cat((z0, z1, translation), dim=1)
+        return mu, logvar, z, rot_mats
 
-        return mu, logvar
+
+def reparametrize_so3(mu, logvar):
+    mu_rotmat = mu.T[:-2].T
+    mu_transl = mu.T[-2:].T
+    logvar_rotmat = logvar.T[:-2].T
+    logvar_transl = logvar.T[-2:].T
+    rot_mats_no_var = rot_mat_tensor(mu_rotmat, 3)
+    translation = reparametrize(mu_transl, logvar_transl)
+    return rot_mats_no_var, translation, logvar_rotmat
+
+
+def reparametrize_s2s2(mu, logvar):
+    mu_rotmat = mu.T[:-2].T
+    mu_transl = mu.T[-2:].T
+    logvar_rotmat = logvar.T[:-2].T
+    logvar_transl = logvar.T[-2:].T
+    translation = reparametrize(mu_transl, logvar_transl)
+    rot_mats_no_var = rotation_vectors(mu_rotmat)
+    return rot_mats_no_var, translation, logvar_rotmat
+
+
+def rotation_vectors(z):
+    z = z.reshape((-1, 6))
+    u = z.T[:3].T
+    v = z.T[3:].T
+    e1 = nn.functional.normalize(u)
+    v2 = v - (e1*v).sum(-1, keepdim=True) * e1
+    e2 = nn.functional.normalize(v2)
+    e3 = torch.cross(e1, e2)
+    matrices = torch.cat([e1, e2, e3]). reshape((-1, 3, 3))
+    return matrices
+
+
+def map_to_lie_algebra(v):
+    """Map a point in R^N to the tangent space at the identity, i.e.
+    to the Lie Algebra
+    Arg:
+        v = vector in R^N, (..., 3) in our case
+    Return:
+        R = v converted to Lie Algebra element, (3,3) in our case"""
+    # make sure this is a sample from R^3
+    assert v.shape[-1] == 3
+
+    R_x = v.new_tensor([[0., 0., 0.],
+                        [0., 0., -1.],
+                        [0., 1., 0.]])
+
+    R_y = v.new_tensor([[0., 0., 1.],
+                        [0., 0., 0.],
+                        [-1., 0., 0.]])
+
+    R_z = v.new_tensor([[0., -1., 0.],
+                        [1., 0., 0.],
+                        [0., 0., 0.]])
+
+    R = R_x * v[..., 0, None, None] + \
+        R_y * v[..., 1, None, None] + \
+        R_z * v[..., 2, None, None]
+    return R
+
+
+def rodrigues(v):
+    theta = v.norm(p=2, dim=-1, keepdim=True)
+    # normalize K
+    K = map_to_lie_algebra(v / theta)
+
+    I = torch.eye(3, device=v.device, dtype=v.dtype)
+    R = I + torch.sin(theta)[..., None]*K \
+        + (1. - torch.cos(theta))[..., None]*(K@K)
+    return R
+
+
+def add_logvar(rot_mats_no_var, logvar_rotmat):
+    logvar_mat = rodrigues(logvar_rotmat)
+    return rot_mats_no_var @ logvar_mat
+
+
+def convert_rot_mat_to_eul_ang(matrix):
+    y1, y2, z = 0, 0, 0
+    sy = math.sqrt(matrix[0][1]**2+matrix[2][1]**2)
+    if sy > 10**(-6):
+        y1 = math.atan2(matrix[2][1], -matrix[0][1])
+        y2 = math.atan2(matrix[1][2], matrix[1][0])
+        z = math.atan2(sy, matrix[1][1])
+    else:
+        y1 = 0
+        y2 = math.atan2(matrix[1][0], matrix[0][0])
+        z = 0
+    return torch.Tensor([y1, z, y2])
+
+
+def convert_rot_mat_ten_to_wig_mat_ten(matrices, latent_dim):
+    batch_size = matrices.shape[0]
+    euler_tens = torch.zeros((batch_size, 3))
+    for i in range(batch_size):
+        euler_tens[i] = convert_rot_mat_to_eul_ang(matrices[i])
+    wig_matrices = rot_mat_tensor(euler_tens, latent_dim)
+    return wig_matrices
+
+
+SO3 = SpecialOrthogonal(3, point_type="vector")
+
+
+def transform_into_so3(mu, logvar, latent_dim, n_samples=1):
+    n_batch_data, latent_shape = mu.shape
+    sigma = logvar.mul(0.5).exp_()
+    if CUDA:
+        eps = torch.cuda.FloatTensor(
+            n_samples, n_batch_data, latent_shape).normal_()
+    else:
+        eps = torch.FloatTensor(n_samples, n_batch_data,
+                                latent_shape).normal_()
+    eps = eps.reshape(eps.shape[1:])
+    tang_mu = eps*sigma
+    z = mu+tang_mu
+    matrices = rot_mat_tensor(z, latent_dim)
+    return matrices
+
+
+def rot_mat_tensor(tens, latent_dim):
+    batch_size = tens.shape[0]
+    J = Jd[int((latent_dim-1)/2)].to(DEVICE)
+    matrices = torch.Tensor(batch_size, latent_dim, latent_dim).to(DEVICE)
+    for i in range(batch_size):
+        alpha = tens[i][0]
+        beta = tens[i][1]
+        gamma = tens[i][2]
+        matrices[i] = rot_mat(alpha, beta, gamma, int((latent_dim-1)/2), J)
+    return matrices
 
 
 class DecoderConv(nn.Module):
@@ -353,6 +560,7 @@ class DecoderConv(nn.Module):
         super(DecoderConv, self).__init__()
         self.config = config
         self.latent_dim = config["latent_dim"]
+        self.latent_space_definition = config["latent_space_definition"]
         self.with_sigmoid = config["with_sigmoid"]
         self.img_shape = config["img_shape"]
         self.conv_dim = config["conv_dim"]
@@ -366,6 +574,11 @@ class DecoderConv(nn.Module):
         self.skip_z = config["skip_z"]
         self.nn_conv_transpose = NN_CONV_TRANSPOSE[self.conv_dim]
         self.nn_batch_norm = NN_BATCH_NORM[self.conv_dim]
+
+        if self.latent_space_definition > 0:
+            self.latent_dim += 2
+        if self.latent_space_definition == 1:
+            self.latent_dim = 11
 
         # activation functions
         self.leakyrelu = nn.LeakyReLU(0.2)
@@ -392,9 +605,7 @@ class DecoderConv(nn.Module):
             batch_norm, conv_tranpose, in_shape = self.block(
                 out_shape=required_in_shape,
                 dec_c_factor=dec_c_factor)
-
-            shape_h = required_in_shape[1] * \
-                required_in_shape[2]*dec_c_factor*2
+            shape_h = reduce(operator.mul, required_in_shape, 1)
             w_z = nn.Linear(self.latent_dim, shape_h, bias=False)
 
             blocks_reverse.append(w_z)
@@ -491,10 +702,9 @@ class VaeConv(nn.Module):
         logvar : tensor, latent space sigma.
 
         """
-        mu, logvar = self.encoder(x)
-        z = reparametrize(mu, logvar)
+        mu, logvar, z, matrix = self.encoder(x)
         res, scale_b = self.decoder(z)
-        return res, scale_b, mu, logvar
+        return res, scale_b, mu, logvar, z
 
 
 def reparametrize(mu, logvar, n_samples=1):
@@ -529,7 +739,6 @@ def reparametrize(mu, logvar, n_samples=1):
 
     z = eps * std_expanded + mu_expanded
     z_flat = z.reshape(n_samples * n_batch_data, latent_dim)
-    # Case where latent_dim = 1: squeeze last dim
     z_flat = z_flat.squeeze(dim=1)
     return z_flat
 
@@ -554,7 +763,7 @@ def sample_from_q(mu, logvar, n_samples=1):
 
 def sample_from_prior(latent_dim, n_samples=1):
     """
-    Transform a probabilistic latent space into a deterministic latent space
+    Transform a probabilistic latent space into a deterministic latent.
 
     Parameters
     ----------
@@ -580,7 +789,7 @@ class Discriminator(nn.Module):
 
     def dis_conv_output_size(self, in_shape, out_channels):
         """
-        Compute the output shape by knowing the input shape of a layer
+        Compute the output shape by knowing the input shape of a layer.
 
         Parameters
         ----------
@@ -612,74 +821,50 @@ class Discriminator(nn.Module):
 
         """
         super(Discriminator, self).__init__()
+        self.img_shape = config["img_shape"]
         self.dis_c = config["dis_c"]
         self.dis_ks = config["dis_ks"]
         self.dis_str = config["dis_str"]
         self.dis_pad = config["dis_pad"]
         self.dis_dil = config["dis_dil"]
+        self.n_blocks = config["n_gan_lay"]
         self.config = config
+        self.batch_size = config["batch_size"]
         self.latent_dim = config["latent_dim"]
         self.img_shape = config["img_shape"]
+        self.conv_dim = config["conv_dim"]
+        self.nn_conv = NN_CONV[self.conv_dim]
+        self.nn_batch_norm = NN_BATCH_NORM[self.conv_dim]
+        self.batch_size = config["batch_size"]
 
         # activation functions
         self.leakyrelu = nn.LeakyReLU(0.2)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 
-        # discriminator
-        self.dis1 = nn.Conv2d(
-            in_channels=self.img_shape[0],
-            out_channels=self.dis_c,
-            kernel_size=self.dis_ks,
-            stride=self.dis_str,
-            padding=self.dis_pad)
-        self.bn1 = nn.BatchNorm2d(self.dis1.out_channels)
-
-        self.dis1_out_shape = self.dis_conv_output_size(
-            in_shape=self.img_shape,
-            out_channels=self.dis1.out_channels)
-
-        self.dis2 = nn.Conv2d(
-            in_channels=self.dis1.out_channels,
-            out_channels=self.dis_c * 2,
-            kernel_size=self.dis_ks,
-            stride=self.dis_str,
-            padding=self.dis_pad)
-        self.bn2 = nn.BatchNorm2d(self.dis2.out_channels)
-        self.dis2_out_shape = self.dis_conv_output_size(
-            in_shape=self.dis1_out_shape,
-            out_channels=self.dis2.out_channels)
-
-        self.dis3 = nn.Conv2d(
-            in_channels=self.dis2.out_channels,
-            out_channels=self.dis_c * 4,
-            kernel_size=self.dis_ks,
-            stride=self.dis_str,
-            padding=self.dis_pad)
-        self.bn3 = nn.BatchNorm2d(self.dis3.out_channels)
-        self.dis3_out_shape = self.dis_conv_output_size(
-            in_shape=self.dis2_out_shape,
-            out_channels=self.dis3.out_channels)
-
-        self.dis4 = nn.Conv2d(
-            in_channels=self.dis3.out_channels,
-            out_channels=self.dis_c * 8,
-            kernel_size=self.dis_ks,
-            stride=self.dis_str,
-            padding=self.dis_pad)
-        self.bn4 = nn.BatchNorm2d(self.dis4.out_channels)
-        self.dis4_out_shape = self.dis_conv_output_size(
-            in_shape=self.dis3_out_shape,
-            out_channels=self.dis4.out_channels)
+        self.blocks = torch.nn.ModuleList()
+        self.dis_out_shape = self.img_shape
+        next_in_channels = self.img_shape[0]
+        for i in range(self.n_blocks):
+            dis_c_factor = 2 ** i
+            dis = self.nn_conv(
+                in_channels=next_in_channels,
+                out_channels=self.dis_c * dis_c_factor,
+                kernel_size=self.dis_ks,
+                stride=self.dis_str,
+                padding=self.dis_pad)
+            bn = self.nn_batch_norm(dis.out_channels)
+            self.blocks.append(dis)
+            self.blocks.append(bn)
+            next_in_channels = dis.out_channels
+            self.dis_out_shape = self.dis_conv_output_size(
+                in_shape=self.dis_out_shape,
+                out_channels=next_in_channels)
 
         self.fcs_infeatures = functools.reduce(
-            (lambda x, y: x * y), self.dis4_out_shape)
-
-        # Two layers to generate mu and log sigma2 of Gaussian
-        # Distribution of features
-        self.fc1 = nn.Linear(
-            in_features=self.fcs_infeatures,
-            out_features=1)
+            (lambda x, y: x * y), self.dis_out_shape)
+        self.fc1 = nn.Linear(in_features=self.fcs_infeatures,
+                             out_features=1)
 
     def forward(self, x):
         """
@@ -694,13 +879,12 @@ class Discriminator(nn.Module):
         -------
         prob: float, between 0 and 1 the probability of being a true image.
         """
-        h1 = self.leakyrelu(self.bn1(self.dis1(x)))
-        h2 = self.leakyrelu(self.bn2(self.dis2(h1)))
-        h3 = self.leakyrelu(self.bn3(self.dis3(h2)))
-        h4 = self.leakyrelu(self.bn4(self.dis4(h3)))
-        h5 = h4.view(-1, self.fcs_infeatures)
-        h5_feature = self.fc1(h5)
-        prob = self.sigmoid(h5_feature)
+        h = x
+        for i in range(self.n_blocks):
+            h = self.leakyrelu(self.blocks[2*i+1](self.blocks[2*i](h)))
+        h = h.view(-1, self.fcs_infeatures)
+        h_feature = self.fc1(h)
+        prob = self.sigmoid(h_feature)
         prob = prob.view(-1, 1)
 
-        return prob, 0, 0  # h5_feature,  h5_logvar
+        return prob, 0, 0
