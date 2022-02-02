@@ -2,7 +2,8 @@
 
 import numpy as np
 import torch
-from ioSPI import ml_cryo
+
+from reduceSPI import ml_cryo
 
 
 class TestDataset:
